@@ -1271,8 +1271,8 @@
   }])
 
   .directive('uiSelectChoices',
-    ['uiSelectConfig', 'RepeatParser', 'uiSelectMinErr', '$compile',
-    function(uiSelectConfig, RepeatParser, uiSelectMinErr, $compile) {
+    ['uiSelectConfig', 'RepeatParser', 'uiSelectMinErr', '$compile', '$parse',
+    function(uiSelectConfig, RepeatParser, uiSelectMinErr, $compile, $parse) {
 
     return {
       restrict: 'EA',
@@ -1343,8 +1343,7 @@
             choices.attr('ng-repeat', RepeatParser.getNgRepeatExpression($select.parserResult.itemName, '$select.items', $select.parserResult.trackByExp, groupByExp));
           }
 
-          choices.attr('ng-if', '$select.open') //Prevent unnecessary watches when dropdown is closed
-              .attr('ng-mouseenter', '$select.setActiveItem('+$select.parserResult.itemName +')')
+          choices.attr('ng-mouseenter', '$select.setActiveItem('+$select.parserResult.itemName +')')
               .attr('ng-click', '$select.select(' + $select.parserResult.itemName + ',false,$event)');
 
           var rowsInner = element.querySelectorAll('.ui-select-choices-row-inner');
