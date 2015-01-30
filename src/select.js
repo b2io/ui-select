@@ -234,6 +234,10 @@
         $timeout(function() {
           ctrl.search = initSearchValue || ctrl.search;
           _searchInput[0].focus();
+
+          if(ctrl.useUiScroll) {
+            $scope.uiScroll.datasource.update();
+          }
         });
       }
     };
@@ -299,6 +303,10 @@
           }
         }
 
+        if(ctrl.useUiScroll && !ctrl.infinite && ctrl.open) {
+          $scope.uiScroll.datasource.update();
+        }
+
       });
 
       if (ctrl.multiple){
@@ -337,6 +345,15 @@
         }
         _refreshDelayPromise = $timeout(function() {
           $scope.$eval(refreshAttr);
+        }, ctrl.refreshDelay);
+      } else if(ctrl.useUiScroll && ctrl.infinite && ctrl.open) {
+        if (_refreshDelayPromise) {
+          $timeout.cancel(_refreshDelayPromise);
+        }
+
+        _refreshDelayPromise = $timeout(function() {
+          ctrl.items = [];
+          $scope.uiScroll.datasource.update();
         }, ctrl.refreshDelay);
       }
     };
@@ -540,6 +557,50 @@
           calculate();
         }
       }, 0, false);
+    };
+
+    ctrl.initUiScrollSupport = function() {
+      $scope.uiScroll = {};
+      $scope.uiScroll.datasource = {
+        current: 0,
+        revision: function() {
+          return $scope.uiScroll.datasource.current;
+        },
+        update: function() {
+          $scope.uiScroll.datasource.current += 1;
+        },
+        get: function(index, count, success) {
+          var start, actualCount;
+
+          // Start from 0
+          index = index - 1;
+          if(index + count < 0) {
+            success([]);
+          } else {
+            // Get smallest index. We don't want scroll up support
+            start = Math.max(0, index);
+            actualCount = count - Math.abs(index - start);
+
+            // If using infinite scrolling, call it's callback
+            if((ctrl.infinite && ctrl.items.length > 0) || (ctrl.infinite && $scope.uiScroll.datasource.current > 1 && ctrl.items.length === 0)) {
+              // Maybe wanted items are already loaded?
+              if(index + count > ctrl.items.length) {
+                return ctrl.infiniteCallback($scope.$parent, {
+                  index: start,
+                  count : actualCount,
+                  callback: success,
+                  search: ctrl.search
+                });
+              } else {
+                return success(ctrl.items.slice(start, start + actualCount));
+              }
+            }
+
+            // Return slice of list
+            return success(ctrl.items.slice(start, start + actualCount));
+          }
+        }
+      };
     };
 
     function _handleDropDownSelection(key) {
@@ -1232,6 +1293,23 @@
 
           // var repeat = RepeatParser.parse(attrs.repeat);
           var groupByExp = attrs.groupBy;
+          $select.useUiScroll = angular.isDefined(attrs.scrollable);
+          $select.infinite = angular.isDefined(attrs.infinite);
+
+          if($select.useUiScroll && groupByExp) {
+            throw uiSelectMinErr('support', "ui-scroll is not supported with grouping");
+          }
+
+          if($select.useUiScroll && angular.isDefined(attrs.refresh)) {
+            throw uiSelectMinErr('support', "refreshing should be handled with infinite callback");
+          }
+
+          if($select.useUiScroll) {
+            $select.initUiScrollSupport();
+          }
+          if($select.infinite) {
+            $select.infiniteCallback = $parse(attrs.infinite);
+          }
 
           $select.parseRepeatAttr(attrs.repeat, groupByExp); //Result ready at $select.parserResult
 
@@ -1249,8 +1327,23 @@
             throw uiSelectMinErr('rows', "Expected 1 .ui-select-choices-row but got '{0}'.", choices.length);
           }
 
-          choices.attr('ng-repeat', RepeatParser.getNgRepeatExpression($select.parserResult.itemName, '$select.items', $select.parserResult.trackByExp, groupByExp))
-              .attr('ng-if', '$select.open') //Prevent unnecessary watches when dropdown is closed
+          if($select.useUiScroll) {
+
+            element.addClass('ui-scroll-viewport-container');
+            element.children().wrapAll('<div ui-scroll-viewport class="ui-scroll-viewport" />');
+
+            choices.attr('ui-scroll', $select.parserResult.itemName + ' in uiScroll.datasource');
+
+            if(angular.isDefined(attrs.infiniteLoader)) {
+              var wrapper = element.querySelectorAll('.ui-scroll-viewport');
+              choices.attr('is-loading', 'uiScrollLoading');
+              wrapper.append('<div class="ui-scroll-loader" ng-if="uiScrollLoading">' + attrs.infiniteLoader + '</div>');
+            }
+          } else {
+            choices.attr('ng-repeat', RepeatParser.getNgRepeatExpression($select.parserResult.itemName, '$select.items', $select.parserResult.trackByExp, groupByExp));
+          }
+
+          choices.attr('ng-if', '$select.open') //Prevent unnecessary watches when dropdown is closed
               .attr('ng-mouseenter', '$select.setActiveItem('+$select.parserResult.itemName +')')
               .attr('ng-click', '$select.select(' + $select.parserResult.itemName + ',false,$event)');
 
