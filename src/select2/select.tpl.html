@@ -9,6 +9,7 @@
     <div class="select2-search" ng-show="$select.searchEnabled">
       <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
              class="ui-select-search select2-input"
+             ng-class="{'select2-active': $select.refreshing}"
              ng-model="$select.search">
     </div>
     <div class="ui-select-choices"></div>

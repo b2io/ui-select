@@ -16,6 +16,7 @@
         ng-hide="$select.disabled"
         ng-model="$select.search"
         ng-click="$select.activate()"
+        ng-class="{'select2-active': $select.refreshing}"
         style="width: 34px;">
     </li>
   </ul>

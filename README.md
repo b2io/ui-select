@@ -39,3 +39,25 @@ For the roadmap, check [issue #3](https://github.com/angular-ui/ui-select/issues
 - Try the [examples](https://github.com/angular-ui/ui-select/blob/master/examples)
 
 When issuing a pull request, please exclude changes from the "dist" folder to avoid merge conflicts.
+
+
+## Custom Additions
+- Works in ie8
+- Added spinner for select2 theme when refreshing data
+  - return a promise in your `refresh` methods
+  - disable with `refreshSpinner="false"`
+
+Spinner Code Example
+```
+<div ui-select-choices repeat="obj in data" refresh="refreshData($select.search)">
+  <div ng-bind-html="obj.displayName | highlight:$select.search"></div>
+</div>
+
+function refreshUsers(searchTerm) {
+    return DataService.getData(searchTerm).then(function(newData) {
+        $scope.data = newData;
+    }
+}
+```
+Note: `DataService.getData()` is returning a promise (`$q.defer()`).
+

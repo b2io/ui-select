@@ -72,6 +72,7 @@
     searchEnabled: true,
     placeholder: '', // Empty by default, like HTML tag <select>
     refreshDelay: 1000, // In milliseconds
+    refreshSpinner: true,
     closeOnSelect: true
   })
 
@@ -142,8 +143,8 @@
    * put as much logic in the controller (instead of the link functions) as possible so it can be easily tested.
    */
   .controller('uiSelectCtrl',
-    ['$scope', '$element', '$timeout', '$filter', 'RepeatParser', 'uiSelectMinErr', 'uiSelectConfig',
-    function($scope, $element, $timeout, $filter, RepeatParser, uiSelectMinErr, uiSelectConfig) {
+    ['$scope', '$element', '$timeout', '$filter', 'RepeatParser', 'uiSelectMinErr', 'uiSelectConfig', '$q',
+    function($scope, $element, $timeout, $filter, RepeatParser, uiSelectMinErr, uiSelectConfig, $q) {
 
     var ctrl = this;
 
@@ -162,6 +163,8 @@
     ctrl.searchEnabled = undefined; // Initialized inside uiSelect directive link function
     ctrl.resetSearchInput = undefined; // Initialized inside uiSelect directive link function
     ctrl.refreshDelay = undefined; // Initialized inside uiSelectChoices directive link function
+    ctrl.refreshSpinner = undefined; // Initialized inside uiSelectChoices directive link function
+    ctrl.refreshing = false;
     ctrl.multiple = false; // Initialized inside uiSelect directive link function
     ctrl.disableChoiceExpression = undefined; // Initialized inside uiSelect directive link function
     ctrl.tagging = {isActivated: false, fct: undefined};
@@ -305,6 +308,8 @@
      */
     ctrl.refresh = function(refreshAttr) {
       if (refreshAttr !== undefined) {
+        if (ctrl.refreshSpinner)
+          ctrl.refreshing = true;
 
         // Debounce
         // See https://github.com/angular-ui/bootstrap/blob/0.10.0/src/typeahead/typeahead.js#L155
@@ -313,7 +318,9 @@
           $timeout.cancel(_refreshDelayPromise);
         }
         _refreshDelayPromise = $timeout(function() {
-          $scope.$eval(refreshAttr);
+          $q.when($scope.$eval(refreshAttr)).finally(function(){
+            ctrl.refreshing = false;
+          });
         }, ctrl.refreshDelay);
       }
     };
@@ -1205,6 +1212,11 @@
             // $eval() is needed otherwise we get a string instead of a number
             var refreshDelay = scope.$eval(attrs.refreshDelay);
             $select.refreshDelay = refreshDelay !== undefined ? refreshDelay : uiSelectConfig.refreshDelay;
+          });
+
+          attrs.$observe('refreshSpinner', function() {
+            var refreshSpinner = scope.$eval(attrs.refreshSpinner);
+            $select.refreshSpinner = refreshSpinner !== undefined ? refreshSpinner : uiSelectConfig.refreshSpinner;
           });
         };
       }
