@@ -1,7 +1,7 @@
 /*!
  * ui-select
  * http://github.com/angular-ui/ui-select
- * Version: 0.9.6 - 2015-01-12T20:24:40.593Z
+ * Version: 0.9.6 - 2015-04-09T17:14:57.807Z
  * License: MIT
  */
 
@@ -191,4 +191,17 @@
 /* Mark invalid Bootstrap */
 .ui-select-bootstrap.ng-dirty.ng-invalid > button.btn.ui-select-match {
     border-color: #D44950;
+}
+
+/* ui-scroll support */
+
+.ui-select-bootstrap > .ui-scroll-viewport-container {
+  padding: 0;
+}
+
+/*
+* #1 - Height is determined by container height - border;
+*/
+.ui-select-bootstrap > .ui-select-choices > .ui-scroll-viewport {
+  height: 198px; /* #1 */
 }
