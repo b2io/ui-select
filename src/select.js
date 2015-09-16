@@ -582,7 +582,7 @@
             actualCount = count - Math.abs(index - start);
 
             // If using infinite scrolling, call it's callback
-            if((ctrl.infinite && ctrl.items.length > 0) || (ctrl.infinite && $scope.uiScroll.datasource.current > 1 && ctrl.items.length === 0)) {
+            if((ctrl.infinite && ctrl.open && ctrl.items.length > 0) || (ctrl.infinite && ctrl.open && $scope.uiScroll.datasource.current > 1 && ctrl.items.length === 0)) {
               // Maybe wanted items are already loaded?
               if(index + count > ctrl.items.length) {
                 return ctrl.infiniteCallback($scope.$parent, {
